@@ -4,9 +4,15 @@ import sqlite3
 
 def get_db_connection():
     connection = sqlite3.connect('coder-bridge.db')
-    connection.row_factory = sqlite3.Row
+    connection.row_factory = dict_factory
 
     return connection
+
+def dict_factory(cursor, row):
+    d = {}
+    for idx, col in enumerate(cursor.description):
+        d[col[0]] = row[idx]
+    return d
 
 app = Flask(__name__)
 CORS(app)
@@ -20,15 +26,8 @@ def get_tasks():
     # commit SQL query
     conn.commit()
     conn.close()
-    
-    tasks = []
-    for row in rows:
-        tasks.append({
-            'id' : row['id'],
-            'description' : row['description']
-        })
 
-    return jsonify(tasks)
+    return jsonify(list(rows))
 
 @app.route("/tasks", methods=['POST'])
 def create_task():
